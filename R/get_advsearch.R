@@ -28,9 +28,10 @@ get_advsearch <- function(params) {
 #' @param page The page number of search results to retrieve.
 #'
 #' @return A data.frame containing the query results.
+#' @export
 #'
 #' @examples
-#' get_advsearch(params = list("q" = "Catan"), page = "1")
+#' get_advsearch_page(params = list("q" = "Catan"), page = "1")
 get_advsearch_page <- function(params, page) {
   url <- httr::modify_url("https://boardgamegeek.com", path = paste0("/search/boardgame/page/", page))
   query <- list('action' = 'search', 'advsearch' = '1', 'objecttype' = 'boardgame')

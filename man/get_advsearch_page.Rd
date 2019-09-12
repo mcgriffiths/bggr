@@ -18,5 +18,5 @@ A data.frame containing the query results.
 Retrieve Page of Advanced Search Results
 }
 \examples{
-get_advsearch(params = list("q" = "Catan"), page = "1")
+get_advsearch_page(params = list("q" = "Catan"), page = "1")
 }
