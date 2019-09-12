@@ -28,7 +28,6 @@ get_advsearch <- function(params) {
 #' @param page The page number of search results to retrieve.
 #'
 #' @return A data.frame containing the query results.
-#' @export
 #'
 #' @examples
 get_advsearch_page <- function(params, page) {
@@ -36,27 +35,12 @@ get_advsearch_page <- function(params, page) {
   query <- list('action' = 'search', 'advsearch' = '1', 'objecttype' = 'boardgame')
   query <- c(query, params)
 
-  resp <- GET(url, query = query)
-  if (http_type(resp) != "application/json") {
+  resp <- httr::GET(url, query = query)
+  if (httr::http_type(resp) != "application/json") {
     stop("API did not return json", call. = FALSE)
   }
 
-  parsed <- jsonlite::fromJSON(content(resp, "text"), simplifyVector = TRUE)
+  parsed <- jsonlite::fromJSON(httr::content(resp, "text"), simplifyVector = TRUE)
 
   parsed$items
 }
-
-bgg_xml <- GET('https://boardgamegeek.com',
-    accept_xml(),
-    path = '/xmlapi2/thing',
-    query = list('id' = paste(10001:11000, collapse = ','),
-                 'stats' = '1'))
-
-
-url <- modify_url('https://boardgamegeek.com',
-                  path = '/xmlapi2/thing',
-                  query = list('id' = paste(1001:2323, collapse = ','),'stats' = '1')
-                  )
-
-items <- content(bgg_xml) %>%
-  xml_find_all('item')
