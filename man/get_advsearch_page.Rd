@@ -17,3 +17,6 @@ A data.frame containing the query results.
 \description{
 Retrieve Page of Advanced Search Results
 }
+\examples{
+get_advsearch(params = list("q" = "Catan"), page = "1")
+}
