@@ -37,14 +37,14 @@ parse_games <- function(id){
 
   col_names <- stringr::str_replace(attrs, 'statistics/ratings/','')
   col_names[15] <- 'rank'
-  col_names <- c('id', col_names)
 
   games_data <- purrr::map(attrs, ~items %>%
                       xml2::xml_find_all(paste0("//",.x)) %>%
                       xml2::xml_attr('value') %>%
                       as.numeric()) %>%
-    dplyr::bind_cols(id = id, .data) %>%
-    purrr::set_names(col_names)
+    dplyr::bind_cols(.data) %>%
+    purrr::set_names(col_names) %>%
+    tibble::add_column(id = id, .before = 1)
 
   games_data
 }

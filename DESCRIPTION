@@ -17,4 +17,5 @@ Imports:
     purrr,
     xml2,
     stringr,
-    rlang
+    rlang,
+    tibble

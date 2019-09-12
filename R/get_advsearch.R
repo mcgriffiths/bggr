@@ -9,17 +9,19 @@
 #' get_advsearch(list("q" = "Catan"))
 get_advsearch <- function(params) {
   result <- get_advsearch_page(params, 1)
-  for(i in 2:100){
-
-    page_result <- get_advsearch_page(params, i)
-    if(length(page_result) > 0){
+  if(nrow(result) < 100){
+    result
+  } else {
+    for(i in 2:50){
+      page_result <- get_advsearch_page(params, i)
       result <- rbind(result, page_result)
-    } else {
-      break
+      if(nrow(page_result) < 100){
+        break
+      } 
+      Sys.sleep(2)
     }
-    Sys.sleep(2)
+    dplyr::distinct(result)
   }
-  result
 }
 
 #' Retrieve Page of Advanced Search Results
@@ -41,6 +43,7 @@ get_advsearch_page <- function(params, page) {
   if (httr::http_type(resp) != "application/json") {
     stop("API did not return json", call. = FALSE)
   }
+  
 
   parsed <- jsonlite::fromJSON(httr::content(resp, "text"), simplifyVector = TRUE)
 
