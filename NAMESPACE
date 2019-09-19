@@ -3,6 +3,8 @@
 export("%>%")
 export(get_advsearch)
 export(get_advsearch_page)
+export(get_forum)
+export(get_forum_page)
 export(parse_games)
 importFrom(magrittr,"%>%")
 importFrom(rlang,.data)
