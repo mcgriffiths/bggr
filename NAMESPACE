@@ -3,6 +3,8 @@
 export("%>%")
 export(get_advsearch)
 export(get_advsearch_page)
+export(get_comments)
+export(get_comments_page)
 export(get_forum)
 export(get_forum_page)
 export(parse_games)
