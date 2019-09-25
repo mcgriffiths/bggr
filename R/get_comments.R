@@ -6,21 +6,22 @@
 #' @export
 #'
 #' @examples
-#' 
+#'
 #' @importFrom rlang .data
 get_comments <- function(id){
+
   games_xml <- httr::GET('https://boardgamegeek.com',
                          path = '/xmlapi2/thing',
                          query = list('id' = paste(id, collapse = ','),
                                       'comments' = '1'),
                          httr::accept_xml())
-  
+
   total_comments <- httr::content(games_xml) %>%
     xml2::xml_find_all('item/comments') %>%
     xml2::xml_attr('totalitems')
-  
+
   pages <- max(ceiling(as.numeric(total_comments)/100))
-  
+
   purrr::map_df(1:pages, ~get_comments_page(id, .))
 }
 
@@ -32,39 +33,44 @@ get_comments <- function(id){
 #' @export
 #'
 #' @examples
-#' 
+#'
 #' @importFrom rlang .data
 get_comments_page <- function(id, page){
-  Sys.sleep(2)
-  games_xml <- httr::GET('https://boardgamegeek.com',
+  print(page)
+  success <- F
+  while(!success){
+    games_xml <- httr::GET('https://boardgamegeek.com',
                          path = '/xmlapi2/thing',
                          query = list('id' = paste(id, collapse = ','),
                                       'comments' = '1',
                                       'page' = page),
                          httr::accept_xml())
-  
+
+    success <- games_xml$status_code == 200
+
+  }
+
   items <- httr::content(games_xml) %>%
     xml2::xml_find_all('item/comments') %>%
     purrr::set_names(id)
-  
+
   parse_item <- function(item){
-    
+
     comments <- item %>%
-      xml2::xml_find_all('comment') 
-    
+      xml2::xml_find_all('comment')
+
     if(length(comments) == 0) {
       return(NULL)
     } else {
-    
+
       comments_df <- comments %>%
         xml2::xml_attrs() %>%
-        purrr::map_df(dplyr::bind_rows) %>%
-        dplyr::mutate(rating = as.numeric(rating))
-    
+        purrr::map_df(dplyr::bind_rows)
+
       return(comments_df)
     }
   }
-  
+
   items %>%
     purrr::map_df(parse_item, .id = 'id')
 
