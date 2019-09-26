@@ -75,3 +75,23 @@ get_comments_page <- function(id, page){
     purrr::map_df(parse_item, .id = 'id')
 
 }
+
+
+#' Get comments for a given page of search results
+#'
+#' @param params parameters for advanced search
+#' @param page page of advanced search
+#'
+#' @return comments dataframe for the search results
+#' @export
+#'
+#' @examples
+get_comments_search_page <- function(params, page){
+  games <- get_advsearch_page(params, page)
+  comments <- get_comments(games$objectid)
+  comments <- games %>%
+    select(objectid, ordtitle) %>%
+    left_join(comments, by = c('objectid' = 'id')) %>%
+    as_tibble()
+  return(comments)
+}
