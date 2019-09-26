@@ -92,6 +92,7 @@ get_comments_search_page <- function(params, page){
   comments <- games %>%
     select(objectid, name) %>%
     left_join(comments, by = c('objectid' = 'id')) %>%
+    select(id = objectid, name, username, rating, comment = value) %>%
     as_tibble()
   return(comments)
 }
