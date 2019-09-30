@@ -10,7 +10,7 @@ top2000comments <- purrr::map_df(11:20, ~bggr::get_comments_search_page(params, 
 
 readr::write_csv(top5000comments, 'top5000_comments.csv')
 
-top5000_comments <- read_csv('top5000_comments.csv') %>%
+top5000_comments <- read_csv('misc/top5000_comments.csv') %>%
   mutate(id = as.character(id), rating = as.numeric(rating))
 
 top5000_comments <- bind_rows(top2000_comments, top5000_comments)
@@ -67,7 +67,7 @@ comments_subset <- top5000_comments %>%
   group_by(id) %>%
   filter(n() >= 100) %>%
   ungroup()
-  
+
 # functionalise search
 search_term <- function(data, term){
   data %>%
@@ -101,7 +101,7 @@ terms <- list("abstract" = "abstract",
               "enginebuilding" = "engine",
               "investment" = "investment",
               "network" = "network",
-              "pickup" = "pick.?up",
+              "pickup" = "pick.?up.+deliver",
               "workerplacement" = "worker.?placement",
               "rummy" = "rummy",
               "memory" = "memory",
@@ -121,7 +121,7 @@ terms <- list("abstract" = "abstract",
               "auction" = "auction.?game",
               "civ" = "civ.?game",
               "coop" = "co.?op\\b",
-              "partnership" = "partnership", 
+              "partnership" = "partnership",
               "solo" = "solo\\b",
               "traitor" = "traitor"
               )
@@ -140,20 +140,98 @@ term_df_bin <- term_df %>%
 
 find_sim <- function(data, game_id){
   probe <- data %>%
-    filter(id == game_id) %>% 
+    filter(id == game_id) %>%
     pull(pc_term)
-  
+
   data %>%
     group_by(id, name) %>%
     summarise(sim = lsa::cosine(pc_term, probe)) %>%
     arrange(desc(sim))
 }
 
-find_sim(term_df_bin, "42") %>% View()
+find_sim(term_df, "1") %>% View()
 
-term_df %>% 
-  group_by(id, name) %>% 
-  filter(pc_term > 0.1) %>% 
-  filter(n() > 4) %>% 
+term_df %>%
+  group_by(id, name) %>%
+  filter(pc_term > 0.1) %>%
+  filter(n() > 4) %>%
   arrange(name) %>% View()
 
+# totals
+term_df %>%
+  group_by(term) %>%
+  summarise(pc_term = sum(n_term)) %>%
+  arrange(desc(pc_term)) %>% View()
+
+library(tidyr)
+
+term_df_wide <- term_df %>%
+  select(-n_term) %>%
+  spread(key = term, value = pc_term)
+
+term_df_wide %>%
+  filter(auction > 1, memory > 5) %>%
+  select(id, name)
+
+
+# PCA
+library(tidyverse)
+library(broom)
+library(knitr)
+library(ggfortify)
+
+term_pca <- term_df_wide %>%
+  ungroup() %>%
+  unite("id", c(id,name)) %>%
+  nest() %>%
+  mutate(pca = map(data, ~ prcomp(.x %>% select(-id), center = TRUE, scale = TRUE)),
+         pca_aug = map2(pca, data, ~augment(.x, data = .y)))
+
+term_pca
+
+var_exp <- term_pca %>%
+  unnest(pca_aug) %>%
+  summarize_at(.vars = vars(contains("PC")), .funs = funs(var)) %>%
+  gather(key = pc, value = variance) %>%
+  mutate(var_exp = variance/sum(variance),
+         cum_var_exp = cumsum(var_exp),
+         pc = str_replace(pc, ".fitted", ""))
+
+var_exp
+
+
+var_exp %>%
+  rename(
+    `Variance Explained` = var_exp,
+    `Cumulative Variance Explained` = cum_var_exp
+  ) %>%
+  gather(key = key, value = value, `Variance Explained`:`Cumulative Variance Explained`) %>%
+  ggplot(aes(pc, value, group = key)) +
+  geom_point() +
+  geom_line() +
+  facet_wrap(~key, scales = "free_y") +
+  theme_bw() +
+  lims(y = c(0, 1)) +
+  labs(y = "Variance",
+       title = "Variance explained by each principal component")
+
+term_pca %>%
+  mutate(
+    pca_graph = map2(
+      .x = pca,
+      .y = data,
+      ~ autoplot(.x, loadings = TRUE, loadings.label = TRUE,
+                 loadings.label.repel = TRUE,
+                 data = .y, label = TRUE,
+                 label.label = "state",
+                 label.repel = TRUE) +
+        theme_bw() +
+        labs(x = "Principal Component 1",
+             y = "Principal Component 2",
+             title = "First two principal components of PCA on USArrests dataset")
+    )
+  ) %>%
+  pull(pca_graph)
+
+# clustering
+# automatic identification of unusually common terms
