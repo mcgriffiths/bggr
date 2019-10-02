@@ -126,6 +126,22 @@ terms <- list("abstract" = "abstract",
               "traitor" = "traitor"
               )
 
+terms <- list('abstract' = 'abstract', 
+              'euro' = 'euro\\b',
+              'luck' = 'chaotic', 
+              'areacontrol' = 'area.?control')
+
+picks <- purrr::map_df(terms, ~search_term(comments_subset, .), .id = 'term') %>%
+  group_by(id) %>%
+  filter(min(pc_term) > 1)
+
+picks %>% 
+  distinct(name) %>%
+  arrange(name) %>%
+  mutate(link = glue("[thing={id}][/thing]")) %>% 
+  pull(link) %>%
+  paste0(collapse = "")
+
 term_df <- purrr::map_df(terms, ~search_term(comments_subset, .), .id = 'term')
 
 # scale
